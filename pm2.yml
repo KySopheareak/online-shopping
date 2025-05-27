@@ -1,0 +1,6 @@
+apps:
+  - script: ./dist/server.js
+    name: nssf-enterprise-api
+    instances: max
+    exec_mode: cluster
+    watch: true
