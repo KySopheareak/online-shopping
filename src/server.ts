@@ -6,6 +6,7 @@ import middleware from "./middleware/index";
 import * as models from "./models/utils/index.model";
 import userRoute from "./routes/user.route";
 import productRoute from "./routes/products.route";
+import orderRoute from "./routes/orders.route";
 
 const app = express();
 
@@ -38,6 +39,7 @@ applyMiddleware(middleware, app);
 
 applyRoutes("/api", productRoute, app);
 applyRoutes("/api", userRoute, app);
+applyRoutes("/api", orderRoute, app);
 
 applyMiddleware(errorHandlers, app);
 

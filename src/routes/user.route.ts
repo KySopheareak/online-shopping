@@ -2,46 +2,45 @@ import { Request, Response } from "express";
 import UserModel from "../models/users.model";
 import jwt from "jsonwebtoken";
 import { authenticateJWT } from "../middleware/jwt-handler";
+import response from "../utils/ResponseUtil";
 
 const JWT_SECRET = process.env.JWT_SECRET || "jwt_secret";
 
 export default [
-  // User Registration
+// User Registration
   {
     path: "/user/register",
     method: "post",
     handler: async (req: Request, res: Response) => {
       try {
-        const { username, email, password } = req.body;
-        if (!username || !email || !password) {
-          return res.status(400).json({ message: "All fields are required" });
+        const { username, email, password, type } = req.body;
+        if (!username || !email || !password || !type) {
+          return response.fail(res, 400, "All fields are required", null);
         }
+
         const existing = await UserModel.findOne({
           $or: [{ username }, { email }],
         });
         if (existing) {
-          return res.status(409).json({ message: "Username or email already exists" });
+          return response.fail(res, 409, "Username or email already exists", null);
         }
-        const user = await UserModel.create({ username, email, password });
+
+        const user = await UserModel.create({ username, email, password, type });
         const token = jwt.sign(
           { id: user._id, username: user.username },
           JWT_SECRET,
           { expiresIn: "1d" }
         );
-        res.status(201).json({
-            message: "User registered",
-            data: {
-              token,
-              user: { id: user._id, username, email },
-            }
-          });
+        let data: any = {token, user}
+        response.success(res, data, "User registered successfully");
+
       } catch (error) {
         res.status(500).json({ message: "Internal server error" });
       }
     },
   },
 
-  // User Login
+// User Login
   {
     path: "/user/login",
     method: "post",
@@ -49,17 +48,17 @@ export default [
       try {
         const { username, password } = req.body;
         if (!username || !password) {
-          return res
-            .status(400)
-            .json({ message: "Username and password required" });
+          return res.status(400).json({ message: "Username and password required" });
         }
+
         const user = await UserModel.findOne({ username });
         if (!user) {
-          return res.status(401).json({ message: "Invalid credentials" });
+          return response.fail(res, 401, "Invalid credentials", null);
         }
+
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-          return res.status(401).json({ message: "Invalid credentials" });
+          return response.fail(res, 401, "Invalid credentials", null);
         }
         // Generate JWT token
         const token = jwt.sign(
@@ -67,19 +66,17 @@ export default [
           JWT_SECRET,
           { expiresIn: "1d" }
         );
-        res.json({
-          message: "Login successful",
-          data: {
-            token,
-            user: { id: user._id, username: user.username, email: user.email }, 
-          },
-        });
+
+        let data: any = {token, user: { id: user._id, username: user.username, email: user.email }};
+        response.success(res, data, "Login successful");
+
       } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        response.fail(res, 500, "Internal server error", error);
       }
     },
   },
 
+// User Profile
   {
     path: "/user/profile",
     method: "get",
