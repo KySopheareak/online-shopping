@@ -7,6 +7,8 @@ import * as models from "./models/utils/index.model";
 import userRoute from "./routes/user.route";
 import productRoute from "./routes/products.route";
 import orderRoute from "./routes/orders.route";
+import categoryRoute from "./routes/categories.route";
+import discountRoute from "./routes/discounts.route";
 
 const app = express();
 
@@ -40,6 +42,8 @@ applyMiddleware(middleware, app);
 applyRoutes("/api", productRoute, app);
 applyRoutes("/api", userRoute, app);
 applyRoutes("/api", orderRoute, app);
+applyRoutes("/api", categoryRoute, app);
+applyRoutes("/api", discountRoute, app);
 
 applyMiddleware(errorHandlers, app);
 

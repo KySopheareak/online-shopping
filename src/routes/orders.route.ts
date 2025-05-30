@@ -12,18 +12,33 @@ export default [
         const { user, products } = req.body;
         // products should be an array: [{ product: productId, quantity: number }, ...]
         if (!user || !Array.isArray(products) || products.length === 0) {
-          return response.fail(res, 400, "User and products are required", null);
+          return response.fail(
+            res,
+            400,
+            "User and products are required",
+            null
+          );
         }
 
         // Validate all products and calculate total_amount
         let total_amount = 0;
         for (const item of products) {
           if (!item.product || !item.quantity || item.quantity < 1) {
-            return response.fail(res, 400, "Each product must have a valid product ID and quantity", null);
+            return response.fail(
+              res,
+              400,
+              "Each product must have a valid product ID and quantity",
+              null
+            );
           }
           const productData = await ProductModel.findById(item.product);
           if (!productData) {
-            return response.fail(res, 404, `Product not found: ${item.product}`, null);
+            return response.fail(
+              res,
+              404,
+              `Product not found: ${item.product}`,
+              null
+            );
           }
           total_amount += productData.price * item.quantity;
         }
@@ -41,8 +56,8 @@ export default [
     },
   },
   {
-    path: "/order/:id/pay",
-    method: "patch",
+    path: "/order/:id/pay-scan",
+    method: "get",
     handler: async (req: Request, res: Response) => {
       try {
         const { id } = req.params;
@@ -51,13 +66,28 @@ export default [
           return response.fail(res, 404, "Order not found", null);
         }
         if (order.status === "paid") {
-          return response.fail(res, 400, "Order already paid", null);
+          return response.fail(res, 400, "Order is already paid", null);
         }
+
         order.status = "paid";
         await order.save();
-        response.success(res, order, "Order marked as paid");
+        response.success(res, order, "Order marked as paid via scan.");
       } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).send("Internal server error");
+      }
+    },
+  },
+  {
+    path: "/order/:id/status",
+    method: "get",
+    handler: async (req: Request, res: Response) => {
+      try {
+        const order = await OrderModel.findById(req.params.id);
+        if (!order) return res.status(404).json({ status: "not_found" });
+        res.json({ status: order.status });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: "error" });
       }
     },
   },
