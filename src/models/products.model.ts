@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 const reviewSchema = new mongoose.Schema({
   rating: { type: Number, required: true },
@@ -14,32 +14,15 @@ const productSchema = new mongoose.Schema({
   description: String,
   category: String,
   price: { type: Number, required: true },
-  discountPercentage: Number,
-  rating: Number,
+  discountPercentage: { type: mongoose.Schema.Types.ObjectId, ref: "discounts", default: null },
   stock: Number,
   tags: [String],
   brand: String,
-  sku: String,
-  weight: Number,
-  dimensions: {
-    width: Number,
-    height: Number,
-    depth: Number,
-  },
-  warrantyInformation: String,
-  shippingInformation: String,
-  availabilityStatus: String,
   reviews: [reviewSchema],
-  returnPolicy: String,
-  minimumOrderQuantity: Number,
-  meta: {
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-    barcode: String,
-    qrCode: String,
-  },
   images: [String],
   thumbnail: String,
+  finalPrice: { type: Number, default: 0 },
+  discountedPrice: { type: Number, default: 0 },
 });
 
 const Product = mongoose.model("products", productSchema);

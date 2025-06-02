@@ -10,7 +10,6 @@ export default [
     handler: async (req: Request, res: Response) => {
       try {
         const { user, products } = req.body;
-        // products should be an array: [{ product: productId, quantity: number }, ...]
         if (!user || !Array.isArray(products) || products.length === 0) {
           return response.fail(
             res,
@@ -40,7 +39,25 @@ export default [
               null
             );
           }
+          // Check stock
+          if (productData.stock < item.quantity) {
+            return response.fail(
+              res,
+              400,
+              `Insufficient stock for product: ${item.product}`,
+              null
+            );
+          }
           total_amount += productData.price * item.quantity;
+        }
+
+        // Reduce stock for each product
+        for (const item of products) {
+          await ProductModel.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: -item.quantity } },
+            { new: true }
+          );
         }
 
         const order = await OrderModel.create({

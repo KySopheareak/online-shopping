@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Discount from "../models/discounts.model";
 import response from "../utils/ResponseUtil";
+import Product from "../models/products.model";
 
 export default [
   {
@@ -24,11 +25,16 @@ export default [
         const discounts = await Discount.find(
           { $and: [...filters] },
           projection
-        ).populate("product", "title -_id"); 
+        ).populate("product", "title -_id");
 
         response.success(res, discounts, "Discounts fetched successfully");
       } catch (err: any) {
-        response.fail( res, 500, "Internal Server Error", "An error occurred while fetching discounts");
+        response.fail(
+          res,
+          500,
+          "Internal Server Error",
+          "An error occurred while fetching discounts"
+        );
       }
     },
   },
@@ -44,13 +50,26 @@ export default [
           endDate: 1,
           percentage: 1,
           active: 1,
-        }).populate({path: "product", select: "title price category brand thumbnail"});
+        }).populate({
+          path: "product",
+          select: "title price category brand thumbnail",
+        });
         if (!discount) {
-          return response.fail( res, 404, "Discount not found", "The requested discount does not exist");
+          return response.fail(
+            res,
+            404,
+            "Discount not found",
+            "The requested discount does not exist"
+          );
         }
         response.success(res, discount, "Discount fetched successfully");
       } catch (err: any) {
-        response.fail( res, 500, "Internal Server Error", "An error occurred while fetching the discount");
+        response.fail(
+          res,
+          500,
+          "Internal Server Error",
+          "An error occurred while fetching the discount"
+        );
       }
     },
   },
@@ -61,7 +80,12 @@ export default [
       try {
         const { startDate, endDate, percentage, active, product } = req.body;
         if (product.length === 0 || percentage == null) {
-          return response.fail( res, 400, "Name and percentage are required", "Please provide discount name and percentage");
+          return response.fail(
+            res,
+            400,
+            "Name and percentage are required",
+            "Please provide discount name and percentage"
+          );
         }
         const newDiscount = await Discount.create({
           startDate,
@@ -70,9 +94,34 @@ export default [
           active,
           product,
         });
+
+        const products = await Product.find({ _id: { $in: product } });
+        // console.log("=====> Products to be updated with discount:", products)
+        await Promise.all(
+          products.map(async (prod: any) => {
+            const discountedPrice = prod.price * (percentage / 100);
+            const finalPrice = prod.price - discountedPrice;
+            await Product.updateOne(
+              { _id: prod._id },
+              {
+                $set: {
+                  discountPercentage: newDiscount._id,
+                  discountedPrice: discountedPrice,
+                  finalPrice: finalPrice,
+                },
+              }
+            );
+          })
+        );
         response.success(res, newDiscount, "Discount created successfully");
       } catch (err: any) {
-        response.fail( res, 500, "Internal Server Error", "An error occurred while creating the discount");
+        console.error("=====> Error creating discount:", err);
+        response.fail(
+          res,
+          500,
+          "Internal Server Error",
+          "An error occurred while creating the discount"
+        );
       }
     },
   },

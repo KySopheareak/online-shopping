@@ -29,7 +29,7 @@ export default [
         const token = jwt.sign(
           { id: user._id, username: user.username },
           JWT_SECRET,
-          { expiresIn: "1d" }
+          { expiresIn: "1h" }
         );
         let data: any = {token, user}
         response.success(res, data, "User registered successfully");

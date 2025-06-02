@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import Product from "../models/products.model";
 import response from "../utils/ResponseUtil";
+import { getProductsWithDiscount } from "../controllers/products.controller";
+import path from "path";
 
 export default [
   {
@@ -9,34 +11,25 @@ export default [
     handler: async (req: Request, res: Response) => {
       try {
         const { search, category } = req.body;
-        let filters: any = [{}];
-        
-        if (category) {
-          filters = [
-              ...filters,
-              { category: { $in: category } }
-          ];
+
+        const matchConditions: any[] = [];
+
+        if (category && category.length > 0) {
+          matchConditions.push({ category: { $in: category } });
         }
         if (search) {
-            filters = [
-                ...filters,
-                { title: { $regex: search, $options: 'i' } }
-            ];
+          matchConditions.push({ title: { $regex: search, $options: "i" } });
         }
-        const projection = {
-          title: 1,
-          description: 1,
-          category: 1,
-          brand: 1,
-          discountPercentage: 1,
-          price: 1,
-          thumbnail: 1,
-        };
 
-        const products = await Product.find({ $and: [...filters]}, projection);
-        response.success(res, products, "Products fetched successfully")
+        await getProductsWithDiscount(matchConditions, res);
       } catch (err: any) {
-        response.fail(res, 500, "Internal Server Error",  "An error occurred while fetching products");
+        console.error("=====> Error fetching products:", err);
+        response.fail(
+          res,
+          500,
+          "Internal Server Error",
+          "An error occurred while fetching products"
+        );
       }
     },
   },
@@ -46,23 +39,31 @@ export default [
     handler: async (req: Request, res: Response) => {
       try {
         const { id } = req.params;
-        const product = await Product.findById(id, 
-          {
-            title: 1,
-            description: 1,
-            brand: 1,
-            discountPercentage: 1,
-            price: 1,
-            thumbnail: 1,
-          }
-        );
+        const product = await Product.findById(id, {
+          title: 1,
+          description: 1,
+          brand: 1,
+          discountPercentage: 1,
+          price: 1,
+          thumbnail: 1,
+          discountedPrice: 1,
+          finalPrice: 1,
+          stock: 1
+        }).populate({
+            path: "discountPercentage",
+            select: "percentage -_id",
+          }).lean();
+
         if (!product) {
           return res.status(404).json({ error: "Product not found" });
         }
-        res.status(200).json(product);
+        if (product.discountPercentage && typeof product.discountPercentage === "object") {
+          product.discountPercentage = product.discountPercentage.percentage;
+        }
+        response.success(res, product, "Product fetched successfully");
       } catch (err: any) {
         res.status(500).json({ error: err.message || "Internal Server Erro!" });
       }
-    }
-  }
+    },
+  },
 ];
