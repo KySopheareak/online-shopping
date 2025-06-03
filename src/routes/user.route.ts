@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import UserModel from "../models/users.model";
-import jwt from "jsonwebtoken";
+import jwt, { decode } from "jsonwebtoken";
 import { authenticateJWT } from "../middleware/jwt-handler";
 import response from "../utils/ResponseUtil";
 
@@ -61,13 +61,16 @@ export default [
           return response.fail(res, 401, "Invalid credentials", null);
         }
         // Generate JWT token
+
         const token = jwt.sign(
           { id: user._id, username: user.username },
           JWT_SECRET,
-          { expiresIn: "1d" }
+          { expiresIn: '1h' }
         );
+        let decoded: any = jwt.verify(token, JWT_SECRET);
+        const expireTime = decoded.exp;
 
-        let data: any = {token, user: { id: user._id, username: user.username, email: user.email }};
+        let data: any = {token, expireTime, user: { id: user._id, username: user.username, email: user.email }};
         response.success(res, data, "Login successful");
 
       } catch (error) {
