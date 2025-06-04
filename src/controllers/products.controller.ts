@@ -2,8 +2,20 @@ import { Response } from "express";
 import Product from "../models/products.model";
 import response from "../utils/ResponseUtil";
 
-export const getProductsWithDiscount = async (matchConditions: any[], res: Response) => {
+export const getProductsWithDiscount = async (
+  matchConditions: any[],
+  res: Response,
+  page: number = 1,
+  limit: number = 10
+) => {
   try {
+    // 1. Get total count
+    const totalItems = await Product.countDocuments(
+      matchConditions.length ? { $and: matchConditions } : {}
+    );
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // 2. Build aggregation pipeline with pagination
     const aggregatePipeline = [
       ...(matchConditions.length ? [{ $match: { $and: matchConditions } }] : []),
       {
@@ -31,13 +43,25 @@ export const getProductsWithDiscount = async (matchConditions: any[], res: Respo
           discountedPrice: 1,
           finalPrice: 1,
           thumbnail: 1,
-          stock: 1
+          stock: 1,
         },
       },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
     ];
 
     const products = await Product.aggregate(aggregatePipeline);
-    response.success(res, products, "Products fetched successfully!");
+
+    // 3. Respond with pagination info
+    let pagination: any = {
+      page: page,
+      count: limit,
+      total: totalItems,
+    }
+    response.success(res, {
+      products,
+      pagination
+    }, "Products fetched successfully!");
 
   } catch (err: any) {
     console.error("=====> Error fetching products:", err);

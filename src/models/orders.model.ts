@@ -21,7 +21,7 @@ const OrderProductSchema = new Schema<OrderProduct>({
 const OrderSchema = new Schema<Order>({
   user: { type: Schema.Types.ObjectId, ref: "users", required: true },
   order_date: { type: Date, required: true, default: Date.now },
-  status: { type: String, enum: ["paid", "unpaid"], default: "unpaid" },
+  status: { type: String, enum: ["paid", "unpaid", "cancelled"], default: "unpaid" },
   products: { type: [OrderProductSchema], required: true },
   total_amount: { type: Number, required: false, default: 0 },
 });

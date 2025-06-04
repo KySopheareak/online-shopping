@@ -25,7 +25,7 @@ export default [
 
 
         const orders = await OrderModel.find({ $and: [...filters] }, projection).populate(
-          {path: 'products.product', select: 'title -_id'
+          {path: 'products.product', select: 'title price -_id'
         });
         response.success(res, orders, "Orders retrieved successfully");
 
@@ -123,4 +123,34 @@ export default [
       }
     },
   },
+  {
+    path: "/order/:id/cancel",
+    method: "get",
+    handler: async (req: Request, res: Response) => {
+      try {
+        const order = await OrderModel.findById(req.params.id);
+        if (!order) return response.fail(res, 404, "Order not found", null);
+
+        if (order.status === "cancelled") {
+          return response.fail(res, 400, "Order is already cancelled", null);
+        }
+
+        // Update stock for each product in the order
+        for (const item of order.products) {
+          await ProductModel.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: item.quantity } },
+            { new: true }
+          );
+        }
+
+        order.status = "cancelled";
+        await order.save();
+        response.success(res, order, "Order cancelled successfully");
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  }
 ];
