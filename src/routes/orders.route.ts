@@ -4,10 +4,9 @@ import OrderModel from "../models/orders.model";
 import ProductModel from "../models/products.model";
 
 export default [
-
   {
-    path: '/order/list',
-    method: 'post',
+    path: "/order/list",
+    method: "post",
     handler: async (req: Request, res: Response) => {
       try {
         const { search } = req.body;
@@ -23,17 +22,16 @@ export default [
           total_amount: 1,
         };
 
-
-        const orders = await OrderModel.find({ $and: [...filters] }, projection).populate(
-          {path: 'products.product', select: 'title price -_id'
-        });
+        const orders = await OrderModel.find(
+          { $and: [...filters] },
+          projection
+        ).populate({ path: "products.product", select: "title price -_id" });
         response.success(res, orders, "Orders retrieved successfully");
-
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   },
   {
     path: "/order",
@@ -42,24 +40,44 @@ export default [
       try {
         const { user, products } = req.body;
         if (!user || !Array.isArray(products) || products.length === 0) {
-          return response.fail(res, 400, "User and products are required", null);
+          return response.fail(
+            res,
+            400,
+            "User and products are required",
+            null
+          );
         }
 
         // Validate all products and calculate total_amount
         let total_amount = 0;
         for (const item of products) {
           if (!item.product || !item.quantity || item.quantity < 1) {
-            return response.fail(res, 400, "Each product must have a valid product ID and quantity", null);
+            return response.fail(
+              res,
+              400,
+              "Each product must have a valid product ID and quantity",
+              null
+            );
           }
 
           const productData = await ProductModel.findById(item.product);
           if (!productData) {
-            return response.fail(res, 404, `Product not found: ${item.product}`, null);
+            return response.fail(
+              res,
+              404,
+              `Product not found: ${item.product}`,
+              null
+            );
           }
 
           // Check stock
           if (productData.stock < item.quantity) {
-            return response.fail(res, 400, `Insufficient stock for product: ${item.product}`, null);
+            return response.fail(
+              res,
+              400,
+              `Insufficient stock for product: ${item.product}`,
+              null
+            );
           }
           total_amount += productData.price * item.quantity;
         }
@@ -86,6 +104,25 @@ export default [
     },
   },
   {
+    path: "/order/:id",
+    method: "get",
+    handler: async (req: Request, res: Response) => {
+      try {
+        const order = await OrderModel.findById(req.params.id)
+        .populate({ path: "products.product", select: "title price -_id"})
+        
+        if (!order) {
+          return response.fail(res, 404, "Order not found", null);
+        }
+        response.success(res, order, "Order retrieved successfully");
+        
+      } catch (error) {
+        console.error(error);
+        response.fail(res, 500, "Internal server error", null);
+      }
+    },
+  },
+  {
     path: "/order/:id/pay-scan",
     method: "get",
     handler: async (req: Request, res: Response) => {
@@ -103,7 +140,6 @@ export default [
         order.status = "paid";
         await order.save();
         response.success(res, order, "Order marked as paid via scan.");
-
       } catch (error) {
         res.status(500).send("Internal server error");
       }
@@ -152,5 +188,5 @@ export default [
         res.status(500).json({ message: "Internal server error" });
       }
     },
-  }
+  },
 ];

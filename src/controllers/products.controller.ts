@@ -6,14 +6,13 @@ export const getProductsWithDiscount = async (
   matchConditions: any[],
   res: Response,
   page: number = 1,
-  limit: number = 10
+  limit: number = 100
 ) => {
   try {
     // 1. Get total count
     const totalItems = await Product.countDocuments(
       matchConditions.length ? { $and: matchConditions } : {}
     );
-    const totalPages = Math.ceil(totalItems / limit);
 
     // 2. Build aggregation pipeline with pagination
     const aggregatePipeline = [

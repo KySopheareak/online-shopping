@@ -9,6 +9,8 @@ import productRoute from "./routes/products.route";
 import orderRoute from "./routes/orders.route";
 import categoryRoute from "./routes/categories.route";
 import discountRoute from "./routes/discounts.route";
+import dashboardRoute from "./routes/dashboard.route";
+
 
 const app = express();
 
@@ -44,10 +46,11 @@ applyRoutes("/api", userRoute, app);
 applyRoutes("/api", orderRoute, app);
 applyRoutes("/api", categoryRoute, app);
 applyRoutes("/api", discountRoute, app);
+applyRoutes("/api", dashboardRoute, app);
 
 applyMiddleware(errorHandlers, app);
 
-const { PORT = 2002 } = process.env;
+const { PORT = 6000 } = process.env;
 const server = http.createServer(app);
 server.setTimeout(0);
 

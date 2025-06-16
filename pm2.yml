@@ -1,6 +1,6 @@
 apps:
   - script: ./dist/server.js
-    name: nssf-enterprise-api
+    name: online-bookstore-api
     instances: max
     exec_mode: cluster
     watch: true
