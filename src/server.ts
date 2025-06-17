@@ -50,7 +50,7 @@ applyRoutes("/api", dashboardRoute, app);
 
 applyMiddleware(errorHandlers, app);
 
-const { PORT = 6000 } = process.env;
+const { PORT = 5000 } = process.env;
 const server = http.createServer(app);
 server.setTimeout(0);
 

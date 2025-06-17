@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import response from "../utils/ResponseUtil";
 import OrderModel from "../models/orders.model";
 import ProductModel from "../models/products.model";
+import path from "path";
 
 export default [
   {
@@ -10,22 +11,75 @@ export default [
     handler: async (req: Request, res: Response) => {
       try {
         const { search } = req.body;
-        let filters: any = [{}];
-        if (search) {
-          filters = [...filters, { name: { $regex: search, $options: "i" } }];
-        }
-        const projection = {
-          user: 1,
-          order_date: 1,
-          status: 1,
-          products: 1,
-          total_amount: 1,
-        };
+        let match: any = {};
 
-        const orders = await OrderModel.find(
-          { $and: [...filters] },
-          projection
-        ).populate({ path: "products.product", select: "title price -_id" });
+        if (search) {
+          match = {
+            $or: [
+              { "user.username": { $regex: search, $options: "i" } },
+              { "user.email": { $regex: search, $options: "i" } },
+              { "products.product.title": { $regex: search, $options: "i" } },
+            ],
+          };
+        }
+
+        const orders = await OrderModel.aggregate([
+          {
+            $lookup: {
+              from: "users",
+              localField: "user",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          { $unwind: "$user" },
+          {
+            $unwind: "$products",
+          },
+          {
+            $lookup: {
+              from: "products",
+              localField: "products.product",
+              foreignField: "_id",
+              as: "products.product",
+            },
+          },
+          { $unwind: "$products.product" },
+          { $match: match },
+          {
+            $group: {
+              _id: "$_id",
+              user: { $first: "$user" },
+              order_date: { $first: "$order_date" },
+              status: { $first: "$status" },
+              products: { $push: "$products" },
+              total_amount: { $first: "$total_amount" },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              "user.username": 1,
+              "user.email": 1,
+              order_date: 1,
+              status: 1,
+              products: {
+                $map: {
+                  input: "$products",
+                  as: "product",
+                  in: {
+                    productId: "$$product.product._id",
+                    title: "$$product.product.title",
+                    price: "$$product.product.price",
+                    quantity: "$$product.quantity",
+                  },
+                },
+              },
+              total_amount: 1,
+            },
+          },
+          { $sort: { order_date: -1 } }
+        ]);
         response.success(res, orders, "Orders retrieved successfully");
       } catch (error) {
         console.error(error);
@@ -108,14 +162,15 @@ export default [
     method: "get",
     handler: async (req: Request, res: Response) => {
       try {
-        const order = await OrderModel.findById(req.params.id)
-        .populate({ path: "products.product", select: "title price -_id"})
-        
+        const order = await OrderModel.findById(req.params.id).populate({
+          path: "products.product",
+          select: "title price -_id",
+        });
+
         if (!order) {
           return response.fail(res, 404, "Order not found", null);
         }
         response.success(res, order, "Order retrieved successfully");
-        
       } catch (error) {
         console.error(error);
         response.fail(res, 500, "Internal server error", null);
