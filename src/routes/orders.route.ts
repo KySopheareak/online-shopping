@@ -208,7 +208,7 @@ export default [
 			try {
 				const order = await OrderModel.findById(req.params.id).populate({
 					path: "products.product",
-					select: "title price -_id",
+					select: "title price _id",
 				});
 
 				if (!order) {
