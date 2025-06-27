@@ -217,7 +217,7 @@ export const getDashBoardOrder = async (req: Request, res: Response) => {
         const allMonths = Array.from(allMonthsSet).sort((a, b) => a - b);
 
         // Map month numbers to names
-        const monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const monthly = allMonths.map((m) => monthNames[m - 1]);
 
         // Build series data
