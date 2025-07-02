@@ -3,7 +3,6 @@ import cors from "cors";
 import express, { Router } from "express";
 import moment from "moment";
 import morgan from "morgan";
-import multer from "multer";
 
 export const handleCors = (router: Router) =>
     router.use(cors({ credentials: true, origin: true }));

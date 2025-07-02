@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import Product from "../models/products.model";
 import response from "../utils/ResponseUtil";
 import { getProductsWithDiscount } from "../controllers/products.controller";
-import path from "path";
 
 export default [
 	{

@@ -24,9 +24,15 @@ export default [
                 }
 
                 if (date) {
-                    const [year, month] = date.split("-");
-                    const startDate = new Date(Number(year), Number(month) - 1, 1, 0, 0, 0, 0);
-                    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+                    const inputDate = new Date(date);
+                    const year = inputDate.getUTCFullYear();
+                    const month = inputDate.getUTCMonth();
+
+                    const startDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+                    const endDate = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
+                    endDate.setUTCDate(endDate.getUTCDate() - 1);
+                    endDate.setUTCHours(23, 59, 59, 999);
+
                     dateMatch["order.order_date"] = {
                         $gte: startDate,
                         $lte: endDate,

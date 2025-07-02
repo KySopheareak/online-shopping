@@ -2,6 +2,7 @@ import { Document, model, Schema } from "mongoose";
 import bcrypt from "bcrypt";
 
 export interface IUser extends Document {
+    googleId?: string;
     username: string;
     email: string;
     password: string;
@@ -11,9 +12,15 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new Schema<IUser>({
+    googleId: { type: String, unique: true, sparse: true },
     username: { type: String, required: true, unique: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true },
-    password: { type: String, required: true },
+    password: { 
+        type: String, 
+        required: function(this: IUser) {
+            return !this.googleId;
+        }
+    },
     type: { type: String, enum: ["admin", "client"], default: "admin" },
     createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });

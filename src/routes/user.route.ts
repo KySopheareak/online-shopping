@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import UserModel from "../models/users.model";
-import jwt, { decode } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { authenticateJWT } from "../middleware/jwt-handler";
 import response from "../utils/ResponseUtil";
-import path from "path";
-import { METHODS } from "http";
 
 const JWT_SECRET = process.env.JWT_SECRET || "jwt_secret";
 
@@ -169,6 +167,75 @@ export default [
                     "Internal Server Error",
                     "An error occurred while fetching users"
                 );
+            }
+        }
+    },
+
+    // User By ID
+    {
+        path: "/user/:id",
+        method: "get",
+        handler: async (req: Request, res: Response) => {
+            try {
+                const userId = req.params.id;
+                if (!userId) {
+                    return response.fail(res, 400, "User ID is required", null);
+                }
+
+                const user = await UserModel.findById(userId).select("-password");
+                if (!user) {
+                    return response.fail(res, 404, "User not found", null);
+                }
+
+                response.success(res, user, "User fetched successfully");
+            } catch (error) {
+                response.fail(res, 500, "Internal server error", error);
+            }
+        }
+    },
+
+    // Update User
+    {
+        path: "/user/:id/update",
+        method: "patch",
+        handler: async (req: Request, res: Response) => {
+            try {
+                const userId = req.params.id;
+                const update_data = req.body;
+                if (!userId) {
+                    return response.fail(res, 400, "User ID is required", null);
+                }
+
+                const user = await UserModel.findByIdAndUpdate(userId, update_data, { new: true });
+                if (!user) {
+                    return response.fail(res, 404, "User not found", null);
+                }
+
+                response.success(res, user, "User updated successfully");
+            } catch (error) {
+                response.fail(res, 500, "Internal server error", error);
+            }
+        }
+    },
+
+    {
+        path: "/user/:id/delete",
+        method: "delete",
+        handler: async (req: Request, res: Response) => {
+            try {
+                const userId = req.params.id;
+                if (!userId) {
+                    return response.fail(res, 400, "User ID is required", null);
+                }
+
+                const user = await UserModel.findByIdAndDelete(userId);
+                if (!user) {
+                    return response.fail(res, 404, "User not found", null);
+                }
+
+                response.success(res, null, "User deleted successfully");
+            } catch (error) {
+                response.fail(res, 500, "Internal server error", error);
             }
         }
     }
