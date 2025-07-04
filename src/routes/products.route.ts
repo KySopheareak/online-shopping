@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Product from "../models/products.model";
 import response from "../utils/ResponseUtil";
 import { getProductsWithDiscount } from "../controllers/products.controller";
+import path from "path";
 
 export default [
 	{
@@ -65,4 +66,25 @@ export default [
 			}
 		},
 	},
+
+    // Create a new product
+    {
+        method: "post",
+        path: "/product/create",
+        handler: async (req: Request, res: Response) => {
+            try {
+                const newProduct = new Product(req.body);
+                await newProduct.save();
+                response.success(res, newProduct, "Product created successfully");
+            } catch (err: any) {
+                console.error("=====> Error creating product:", err);
+                response.fail(
+                    res,
+                    500,
+                    "Internal Server Error",
+                    "An error occurred while creating the product"
+                );
+            }
+        },
+    }
 ];

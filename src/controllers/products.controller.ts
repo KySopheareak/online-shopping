@@ -43,6 +43,7 @@ export const getProductsWithDiscount = async (
                     finalPrice: 1,
                     thumbnail: 1,
                     stock: 1,
+                    images: 1,
                 },
             },
             { $skip: (page - 1) * limit },
